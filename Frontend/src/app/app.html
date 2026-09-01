@@ -1,0 +1,24 @@
+<main class="app-shell">
+  <!-- Role & Persona Selection Header -->
+  <app-role-selector (roleChange)="onRoleSelected($event)"></app-role-selector>
+
+  <!-- Role-Based View Switching Container -->
+  @if (currentUser) {
+    <div class="view-content">
+      <!-- 1. Retailer View -->
+      @if (currentRole === 'retailer') {
+        <app-retailer-view [user]="currentUser"></app-retailer-view>
+      }
+
+      <!-- 2. Dispatcher View -->
+      @if (currentRole === 'dispatcher') {
+        <app-dispatcher-view [user]="currentUser"></app-dispatcher-view>
+      }
+
+      <!-- 3. Rider View -->
+      @if (currentRole === 'rider') {
+        <app-rider-view [user]="currentUser"></app-rider-view>
+      }
+    </div>
+  }
+</main>
