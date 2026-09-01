@@ -1,0 +1,67 @@
+// Prisma Schema for Dukatrack Delivery Coordination MVP
+// Uses SQLite for zero-dependency local development setup on Windows
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// User model for Retailers, Dispatchers, and Riders
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String
+  role      String   // 'retailer' | 'dispatcher' | 'rider'
+  createdAt DateTime @default(now())
+
+  // Relations
+  createdRequests  DeliveryRequest[] @relation("RetailerRequests")
+  assignedRequests DeliveryRequest[] @relation("RiderRequests")
+  statusEvents     StatusEvent[]
+
+  @@map("users")
+}
+
+// DeliveryRequest model representing a package delivery lifecycle
+model DeliveryRequest {
+  id               String   @id @default(uuid())
+  retailer_id      String
+  customer_name    String
+  customer_phone   String
+  customer_address String
+  item_description String
+  status           String   @default("REQUESTED") // REQUESTED | ASSIGNED | PICKED_UP | DELIVERED
+  assigned_rider_id String?
+  qr_code_token    String   @unique
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  // Relations
+  retailer       User          @relation("RetailerRequests", fields: [retailer_id], references: [id])
+  assigned_rider User?         @relation("RiderRequests", fields: [assigned_rider_id], references: [id])
+  status_events  StatusEvent[]
+
+  @@map("delivery_requests")
+}
+
+// StatusEvent log model - Immutable Proof of Delivery & audit record
+model StatusEvent {
+  id          String   @id @default(uuid())
+  delivery_id String
+  from_status String?
+  to_status   String
+  actor_id    String
+  actor_role  String
+  timestamp   DateTime @default(now())
+  method      String   // 'manual_update' | 'qr_scan'
+
+  // Relations
+  delivery DeliveryRequest @relation(fields: [delivery_id], references: [id], onDelete: Cascade)
+  actor    User            @relation(fields: [actor_id], references: [id])
+
+  @@map("status_events")
+}
