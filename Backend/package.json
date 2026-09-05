@@ -1,0 +1,24 @@
+{
+  "name": "dukatrack-backend",
+  "version": "1.0.0",
+  "description": "Dukatrack Delivery Coordination MVP Backend",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "db:push": "prisma db push",
+    "db:seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.0.3"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  }
+}
