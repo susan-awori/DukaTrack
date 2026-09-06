@@ -187,6 +187,39 @@ import { User, UserRole } from '../../models/delivery.model';
 export class RoleSelectorComponent implements OnInit {
   @Output() roleChange = new EventEmitter<{ role: UserRole; user: User }>();
 
+  private readonly sampleUsers: User[] = [
+    {
+      id: 'ret-101',
+      name: 'Mama Mboga Groceries (Kilimani)',
+      phone: '+254712345678',
+      role: 'retailer',
+    },
+    {
+      id: 'ret-102',
+      name: 'Nairobi Tech Hub (Westlands)',
+      phone: '+254722998877',
+      role: 'retailer',
+    },
+    {
+      id: 'disp-201',
+      name: 'Central Nairobi Logistics Hub',
+      phone: '+254700000000',
+      role: 'dispatcher',
+    },
+    {
+      id: 'rider-301',
+      name: 'James Omondi (Boda Boda KCB-123A)',
+      phone: '+254733112233',
+      role: 'rider',
+    },
+    {
+      id: 'rider-302',
+      name: 'Wanjiku Kamau (Express Bike)',
+      phone: '+254744556677',
+      role: 'rider',
+    },
+  ];
+
   public allUsers: User[] = [];
   public filteredUsers: User[] = [];
   public selectedRole: UserRole = 'retailer';
@@ -205,7 +238,11 @@ export class RoleSelectorComponent implements OnInit {
         this.allUsers = users;
         this.onRoleChange(this.selectedRole);
       },
-      error: (err) => console.error('Failed to load users:', err),
+      error: (err) => {
+        console.error('Failed to load users; using sample personas:', err);
+        this.allUsers = this.sampleUsers;
+        this.onRoleChange(this.selectedRole);
+      },
     });
   }
 
