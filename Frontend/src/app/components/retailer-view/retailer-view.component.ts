@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { SocketService } from '../../services/socket.service';
 import { DeliveryRequest, StatusEvent, User } from '../../models/delivery.model';
-import { Subscription } from 'rxjs';
+import { finalize, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-retailer-view',
@@ -485,9 +485,9 @@ export class RetailerViewComponent implements OnChanges {
         customer_address: this.newRequest.customer_address,
         item_description: this.newRequest.item_description,
       })
+      .pipe(finalize(() => (this.isSubmitting = false)))
       .subscribe({
         next: (created) => {
-          this.isSubmitting = false;
           this.newRequest = { customer_name: '', customer_phone: '', customer_address: '', item_description: '' };
           const exists = this.requests.some((r) => r.id === created.id);
           if (!exists) {
@@ -495,7 +495,6 @@ export class RetailerViewComponent implements OnChanges {
           }
         },
         error: (err) => {
-          this.isSubmitting = false;
           console.error('Failed to create delivery:', err);
         },
       });

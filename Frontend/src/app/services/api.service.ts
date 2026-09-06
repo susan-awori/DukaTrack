@@ -44,6 +44,14 @@ export class ApiService {
     customer_address: string;
     item_description: string;
   }): Observable<DeliveryRequest> {
+    if (
+      typeof window !== 'undefined' &&
+      !['localhost', '127.0.0.1'].includes(window.location.hostname) &&
+      this.API_URL.includes('localhost')
+    ) {
+      return of(this.createDemoRequest(data));
+    }
+
     return this.http.post<DeliveryRequest>(`${this.API_URL}/requests`, data).pipe(
       timeout(8000),
       catchError(() => of(this.createDemoRequest(data))),
