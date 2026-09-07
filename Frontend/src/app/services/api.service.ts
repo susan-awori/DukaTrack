@@ -9,9 +9,12 @@ import { DeliveryRequest, StatusEvent, User } from '../models/delivery.model';
 })
 export class ApiService {
   private readonly API_URL = 'http://localhost:3000';
-  private readonly demoRequests: DeliveryRequest[] = [];
+  private readonly demoRequests: DeliveryRequest[];
+  private readonly demoRequestsStorageKey = 'dukatrack-demo-requests';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    this.demoRequests = this.loadDemoRequests();
+  }
 
   /** Fetch mock users, optionally filtered by role */
   getUsers(role?: string): Observable<User[]> {
@@ -110,7 +113,29 @@ export class ApiService {
   }): DeliveryRequest {
     const request = this.createDemoRequest(data);
     this.demoRequests.unshift(request);
+    this.persistDemoRequests();
     return request;
+  }
+
+  private loadDemoRequests(): DeliveryRequest[] {
+    if (typeof localStorage === 'undefined') {
+      return [];
+    }
+
+    try {
+      const storedRequests = localStorage.getItem(this.demoRequestsStorageKey);
+      return storedRequests ? JSON.parse(storedRequests) as DeliveryRequest[] : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private persistDemoRequests(): void {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+
+    localStorage.setItem(this.demoRequestsStorageKey, JSON.stringify(this.demoRequests));
   }
 
   private createDemoRequest(data: {
@@ -159,6 +184,7 @@ export class ApiService {
     request.status = 'ASSIGNED';
     request.updated_at = new Date().toISOString();
     request.assigned_rider = this.getDemoUsers('rider').find((user) => user.id === riderId) || null;
+    this.persistDemoRequests();
     return request;
   }
 
@@ -172,10 +198,29 @@ export class ApiService {
 
   /** Update delivery status manually (Rider - PICKED_UP, etc.) */
   updateStatus(deliveryId: string, newStatus: string, riderId: string): Observable<DeliveryRequest> {
+    if (this.isDeployedWithoutBackend()) {
+      return of(this.updateDemoStatus(deliveryId, newStatus));
+    }
+
     return this.http.post<DeliveryRequest>(`${this.API_URL}/requests/${deliveryId}/status`, {
       newStatus,
       riderId,
-    });
+    }).pipe(
+      timeout(8000),
+      catchError(() => of(this.updateDemoStatus(deliveryId, newStatus))),
+    );
+  }
+
+  private updateDemoStatus(deliveryId: string, newStatus: string): DeliveryRequest {
+    const request = this.demoRequests.find((item) => item.id === deliveryId);
+    if (!request) {
+      throw new Error('Demo delivery request was not found');
+    }
+
+    request.status = newStatus as DeliveryRequest['status'];
+    request.updated_at = new Date().toISOString();
+    this.persistDemoRequests();
+    return request;
   }
 
   /** Confirm delivery via scanned QR code token (Rider) */
