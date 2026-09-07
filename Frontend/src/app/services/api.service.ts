@@ -198,10 +198,29 @@ export class ApiService {
 
   /** Update delivery status manually (Rider - PICKED_UP, etc.) */
   updateStatus(deliveryId: string, newStatus: string, riderId: string): Observable<DeliveryRequest> {
+    if (this.isDeployedWithoutBackend()) {
+      return of(this.updateDemoStatus(deliveryId, newStatus));
+    }
+
     return this.http.post<DeliveryRequest>(`${this.API_URL}/requests/${deliveryId}/status`, {
       newStatus,
       riderId,
-    });
+    }).pipe(
+      timeout(8000),
+      catchError(() => of(this.updateDemoStatus(deliveryId, newStatus))),
+    );
+  }
+
+  private updateDemoStatus(deliveryId: string, newStatus: string): DeliveryRequest {
+    const request = this.demoRequests.find((item) => item.id === deliveryId);
+    if (!request) {
+      throw new Error('Demo delivery request was not found');
+    }
+
+    request.status = newStatus as DeliveryRequest['status'];
+    request.updated_at = new Date().toISOString();
+    this.persistDemoRequests();
+    return request;
   }
 
   /** Confirm delivery via scanned QR code token (Rider) */
